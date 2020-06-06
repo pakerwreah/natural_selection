@@ -1,25 +1,25 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <unistd.h>
-
-using namespace std;
+#include <algorithm>
+#include <thread>
+#include <chrono>
 
 #define BOARD_SIZE 30
 #define FOOD_ENERGY 10
 #define MAX_ENERGY 30
 
-random_device dev;
-mt19937 rng(dev());
-uniform_int_distribution<mt19937::result_type> dist(0,BOARD_SIZE-1);
+std::random_device dev;
+std::mt19937 rng(dev());
+std::uniform_int_distribution<std::mt19937::result_type> dist(0,BOARD_SIZE-1);
 
 int rand() {
 	return dist(rng);
 }
 
 template<typename T>
-void remove(std::vector<T>& vector, T const& value){
-    vector.erase(std::remove(begin(vector), end(vector), value), end(vector));
+void removes(std::vector<T> &vec, T const& value){
+    vec.erase(std::remove(vec.begin(), vec.end(), value), vec.end());
 }
 
 struct Point {
@@ -68,9 +68,9 @@ class Creature {
 				id = ++sequency;
 			}
 		
-			string color() {
+			std::string color() {
 				double e = energy / (double)MAX_ENERGY;
-				return to_string(41 + min((int)(e * 7), 6));
+				return std::to_string(41 + std::min((int)(e * 7), 6));
 			}
 		
 			void eat() {
@@ -120,8 +120,8 @@ int Creature::sequency = 0;
 class Board {
 
 	private:
-		vector<Creature> creatures;
-		vector<Point> foods;
+		std::vector<Creature> creatures;
+		std::vector<Point> foods;
 	
 	public:
 		Board(int count) {
@@ -167,14 +167,14 @@ class Board {
 					}
 					
 					if(cr != NULL) {
-						cout << "\x1b[1;" << cr->color() << "m " << cr->id << (cr->id > 9 ? "" : " ") << "\x1b[0m";
+						std::cout << "\x1b[1;" << cr->color() << "m " << cr->id << (cr->id > 9 ? "" : " ") << "\x1b[0m";
 					} else if(food) {
-						cout << "\x1b[33m * \x1b[0m";
+						std::cout << "\x1b[33m * \x1b[0m";
 					} else {
-						cout << "   ";
+						std::cout << "   ";
 					}
 				}
-				cout << endl;
+				std::cout << std::endl;
 			}
 		}
 		
@@ -204,27 +204,28 @@ class Board {
 				for (auto &f : foods) {
 					if(c.pos == f) {
 						c.eat();
-						remove(foods, f);
+						removes(foods, f);
 						break;
 					}
 				}
 				
 				// kill creature
 				if(c.energy == 0) {
-					remove(creatures, c);
+					removes(creatures, c);
 				}
 			}
 		}
 };
 
 int main() {
-
+    using namespace std::chrono_literals;
+    
 	Board board(8);
 	
 	while(true) {
 		board.move();
 		board.print();
-		usleep(300000);
+		std::this_thread::sleep_for(300ms);
 	}
 
 	return 0;
